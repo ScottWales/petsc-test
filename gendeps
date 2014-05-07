@@ -36,7 +36,7 @@ infile  = args.INPUT
 outfile = args.output
 
 # Regexs to find module references in the code
-moduleDef  = re.compile('module\s*(\S+)',re.IGNORECASE)
+moduleDef  = re.compile('module\s*(?!procedure\s*)(\S+)',re.IGNORECASE)
 useDef     = re.compile('use\s*(\S+)',re.IGNORECASE)
 programDef = re.compile('program\s*(\S+)',re.IGNORECASE)
 

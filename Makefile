@@ -23,8 +23,16 @@ all: check
 .SUFFIXES:
 
 # Tested with gfortran-4.8 and ifort
-FC=mpif90
-LD=$(FC)
+FC       = mpiifort
+LD       = $(FC)
+
+PFUNIT   = ../pfunit
+
+PETSC    = ../petsc-3.4.4/arch-linux2-c-debug
+LDFLAGS += -L${PETSC}/lib
+LDLIBS  += -lpetsc -lX11
+FCFLAGS += -I${PETSC}/include
+VPATH   += ${PETSC}/include
 
 # Compiler detection
 ifeq ($(findstring gcc,$(shell $(FC) -v 2>&1)),gcc)
