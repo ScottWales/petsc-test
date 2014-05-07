@@ -59,3 +59,4 @@ source /opt/rh/devtoolset-2/enable
 module load openmpi-x86_64
 EOF
 
+ln -s /vagrant ~/petsc-test

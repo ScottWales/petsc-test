@@ -15,6 +15,8 @@ The build system supports incremental and parallel builds. To compile all PROGRA
 
     $ make
 
+If you are not using the Vagrant environment you can specify the paths to PFunit and PETSc using the `PFUNIT` and `PETSC_DIR` environment variables.
+
 Tests
 =====
 
