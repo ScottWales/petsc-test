@@ -80,7 +80,7 @@ TESTS    = $(patsubst src/%.pf,test/%,$(TESTSRC))
 
 # Run all tests
 check: $(TESTS)
-	@for test in $^; do echo "\n$$test"; ./$$test; done
+	@for test in $^; do echo -e "\n$$test"; mpiexec -n 1 ./$$test; done
 
 # Cleanup
 clean:
@@ -101,7 +101,7 @@ obj/%.F90: src/%.pf
 obj/%.o: obj/%.F90
 	@mkdir -p $(dir $@)
 	@mkdir -p mod
-	$(FC) $(FCFLAGS) -c -o $@ $<
+	$(FC) $(FCFLAGS) ${TESTFCFLAGS} -c -o $@ $<
 
 # Secondexpansion to calculate prerequisite modules
 .SECONDEXPANSION:

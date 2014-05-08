@@ -60,6 +60,8 @@ cat > /etc/profile.d/xxx-development.sh << EOF
 # This needs to come after /etc/profile.d/modules.sh
 source /opt/rh/devtoolset-2/enable
 module load openmpi-x86_64
+
+export LD_LIBRARY_PATH=/home/vagrant/petsc/lib:$LD_LIBARARY_PATH
 EOF
 
 ln -s /vagrant ~vagrant/petsc-test

@@ -1,0 +1,54 @@
+
+module mesh_test_mod
+    use petsc
+    use petscdmda
+    use pfunit_mod
+
+    ! Get PETSc typedefs
+#include "finclude/petscdmdadef.h"
+
+contains
+
+    @before
+    subroutine first
+      integer :: ierr
+
+      call PetscInitialize(PETSC_NULL_CHARACTER,ierr)
+      @assertEqual(ierr, 0)
+    end subroutine
+
+    @after
+    subroutine last
+      integer :: ierr
+
+      call PetscFinalize(ierr)
+      @assertEqual(ierr, 0)
+    end subroutine
+
+    @mpiTest( npes=[2] )
+    subroutine dmda_create
+        DM :: mesh
+        integer :: ierr
+
+        ! Create a 10x10x10 3d mesh
+        call DMDACreate3d(MPI_COMM_WORLD, &
+                          DMDA_BOUNDARY_NONE, &
+                          DMDA_BOUNDARY_NONE, &
+                          DMDA_BOUNDARY_NONE, &
+                          DMDA_STENCIL_STAR, &
+                          10, 10, 10, &
+                          PETSC_DECIDE, &
+                          PETSC_DECIDE, &
+                          PETSC_DECIDE, &
+                          1, &
+                          1, &
+                          PETSC_NULL_INTEGER, &
+                          PETSC_NULL_INTEGER, &
+                          PETSC_NULL_INTEGER, &
+                          mesh, &
+                          ierr)
+
+        @assertEqual(ierr,0)
+
+    end subroutine
+end module
