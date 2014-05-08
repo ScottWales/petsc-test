@@ -23,7 +23,7 @@ all: check
 .SUFFIXES:
 
 # Tested with gfortran-4.8 and ifort
-FC        ?= mpifort
+FC        ?= mpif90
 LD         = $(FC)
 
 # These locations are defaults for vagrant/travis

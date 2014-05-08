@@ -59,4 +59,7 @@ source /opt/rh/devtoolset-2/enable
 module load openmpi-x86_64
 EOF
 
-ln -s /vagrant ~/petsc-test
+ln -s /vagrant ~vagrant/petsc-test
+
+wget -nv -O - http://walesnix.earthsci.unimelb.edu.au/petsc-3.4.4-debug.tar.gz | tar xz -C ~vagrant
+wget -nv -O - http://walesnix.earthsci.unimelb.edu.au/pfunit-2.1.0.tar.gz | tar xz -C ~vagrant
