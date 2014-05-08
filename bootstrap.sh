@@ -18,8 +18,11 @@
 
 # Script for Centos VM setup
 
-# Install recent gcc
+# CERN development
 wget -nv -O /etc/yum.repos.d/slc6-devtoolset.repo http://linuxsoft.cern.ch/cern/devtoolset/slc6-devtoolset.repo
+
+# EPEL
+rpm -i http://dl.fedoraproject.org/pub/epel/6/i386/epel-release-6-8.noarch.rpm
 
 cat > /etc/pki/rpm-gpg/RPM-GPG-KEY-cern << EOF
 -----BEGIN PGP PUBLIC KEY BLOCK-----
@@ -51,7 +54,7 @@ C1MV1+CnT8UupHzxy6J7
 =IUD3
 -----END PGP PUBLIC KEY BLOCK-----
 EOF
-yum install --assumeyes devtoolset-2-toolchain openmpi-devel lapack-devel
+yum install --assumeyes devtoolset-2-toolchain openmpi-devel lapack-devel python-argparse
 
 cat > /etc/profile.d/xxx-development.sh << EOF
 # This needs to come after /etc/profile.d/modules.sh

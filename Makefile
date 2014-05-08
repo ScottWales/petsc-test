@@ -23,12 +23,12 @@ all: check
 .SUFFIXES:
 
 # Tested with gfortran-4.8 and ifort
-FC        ?= mpif90
+FC         = mpif90
 LD         = $(FC)
 
 # These locations are defaults for vagrant/travis
-PFUNIT    ?= ~/pfunit
-PETSC_DIR ?= ~/petsc
+PFUNIT    ?= ${HOME}/pfunit
+PETSC_DIR ?= ${HOME}/petsc
 
 FCFLAGS   += -I$(PFUNIT)/mod
 VPATH     += $(PFUNIT)/mod
