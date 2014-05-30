@@ -17,14 +17,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-all: check
+all: check bin/plex
 
 .PHONY:all clean check
 .SUFFIXES:
 
 # Tested with gfortran-4.8 and ifort
 FC         = mpif90
-LD         = $(FC)
+CC         = mpicc
+LD         = ${CC}
 
 # These locations are defaults for vagrant/travis
 PFUNIT    ?= ${HOME}/pfunit
@@ -34,22 +35,22 @@ FCFLAGS   += -I$(PFUNIT)/mod
 VPATH     += $(PFUNIT)/mod
 PFPARSE    = $(PFUNIT)/bin/pFUnitParser.py
 
+CFLAGS    += -I${PETSC_DIR}/include
 FCFLAGS   += -I${PETSC_DIR}/include
 VPATH     += ${PETSC_DIR}/include
 LDFLAGS   += -L${PETSC_DIR}/lib
 LDLIBS    += -lpetsc
 
+CFLAGS    += -std=c99 -Wall -Werror
+
 # Compiler detection
 ifeq ($(findstring gcc,$(shell $(FC) -v 2>&1)),gcc)
     COMPILER_TYPE =  gnu
 
-    FCFLAGS      += -fimplicit-none
     FCFLAGS      += -g -fbacktrace
+    FCFLAGS      += -fimplicit-none
     FCFLAGS      += -Wall -Wextra -Werror
     FCFLAGS      += -Iinclude -Jmod
-    FCFLAGS      += -fopenmp
-
-    LDFLAGS      += -fopenmp
 
     TESTFCFLAGS  += -Wno-unused
     TESTFCFLAGS  += -Wno-uninitialized
@@ -61,9 +62,6 @@ else ifeq ($(findstring ifort,$(shell $(FC) -v 2>&1)),ifort)
     FCFLAGS      += -g -traceback
     FCFLAGS      += -warn all -warn errors -check all
     FCFLAGS      += -Iinclude -module mod
-    FCFLAGS      += -openmp
-
-    LDFLAGS      += -openmp
 
     TESTFCFLAGS  += -Wno-unused-parameter
 endif
@@ -77,10 +75,19 @@ TESTSRC := $(shell find src -name '*.pf' -type f)
 
 # Get list of tests to run
 TESTS    = $(patsubst src/%.pf,test/%,$(TESTSRC))
+TESTFLAGS = -no-signal-handler
+
+# Read dependencies
+DEPS += $(patsubst %.f90,deps/%.d,$(SRC))
+DEPS += $(patsubst src/%.pf,deps/obj/%.d,$(TESTSRC))
+-include $(DEPS)
+
+# Compile programs found by the dependency generation
+all: $(FPROGRAMS) bin/plex
 
 # Run all tests
 check: $(TESTS)
-	@for test in $^; do echo -e "\n$$test"; mpiexec -n 1 ./$$test; done
+	@for test in $^; do echo -e "\n$$test"; mpirun -n 2 ./$$test ${TESTFLAGS}; done
 
 # Cleanup
 clean:
@@ -91,6 +98,10 @@ obj/%.o: src/%.f90
 	@mkdir -p $(dir $@)
 	@mkdir -p mod
 	$(FC) $(FCFLAGS) -c -o $@ $<
+obj/%.o: src/%.c
+	@mkdir -p $(dir $@)
+	${CC} ${CPPFLAGS} ${CFLAGS} -c -o $@ $<
+
 
 # Process pFunit tests
 obj/%.F90: src/%.pf
@@ -106,7 +117,8 @@ obj/%.o: obj/%.F90
 # Secondexpansion to calculate prerequisite modules
 .SECONDEXPANSION:
 
-# Link programs
+# Link programs (Fortran programs should use ${FC})
+${FPROGRAMS}: LD=${FC}
 bin/%: obj/%.o $$(objectrequirements_%.o)
 	@mkdir -p $(dir $@)
 	$(LD) $(LDFLAGS) -o $@ $^ $(LDLIBS)
@@ -115,7 +127,7 @@ bin/%: obj/%.o $$(objectrequirements_%.o)
 $(TESTS):$(PFUNIT)/include/driver.F90
 test/%: obj/%.o $$(objectrequirements_obj/%.o)
 	@mkdir -p $(dir $@)
-	$(FC) $(FCFLAGS) $(TESTFCFLAGS) $(LDFLAGS) -L$(PFUNIT)/lib -DUSE_MPI -DSUITE=$(or $(basename $(modulesprovided_obj/$*.o)),$(notdir $*))_suite -o $@ $^ $(LDLIBS) -lpfunit
+	$(FC) $(FCFLAGS) $(TESTFCFLAGS) $(LDFLAGS) -L$(PFUNIT)/lib -DUSE_MPI -openmp -DSUITE=$(or $(basename $(modulesprovided_obj/$*.o)),$(notdir $*))_suite -o $@ $^ $(LDLIBS) -lpfunit
 
 # Dependency generation
 deps/%.d: %.f90
@@ -125,9 +137,3 @@ deps/%.d: %.F90
 	@mkdir -p $(dir $@)
 	./gendeps -o $@ $<
 
-DEPS += $(patsubst %.f90,deps/%.d,$(SRC))
-DEPS += $(patsubst src/%.pf,deps/obj/%.d,$(TESTSRC))
--include $(DEPS)
-
-# Compile programs found by the dependency generation
-all: $(PROGRAMS)
