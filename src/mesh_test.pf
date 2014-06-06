@@ -9,29 +9,56 @@ module mesh_test_mod
 
 contains
 
-    @before
-    subroutine first
-      integer :: ierr
+    function signalhandler(signal, context) result(ierr)
+        use, intrinsic                  :: iso_c_binding
+        integer(kind=C_INT), intent(in) :: signal
+        type(C_PTR), intent(in)         :: context
+        integer(kind=C_INT)             :: ierr
+        integer, pointer                :: unused
 
-      call PetscInitialize(PETSC_NULL_CHARACTER,ierr)
-      @assertEqual(ierr, 0)
+        call C_F_POINTER(context, unused)
+        ierr = 1 + signal*0
+    end function
+
+    @before
+    subroutine first(this)
+        class(MPITestMethod), intent(inout) :: this
+        integer :: ierr
+        character(:), allocatable :: unused
+        unused = this%getName()
+
+        call PetscInitialize(PETSC_NULL_CHARACTER,ierr)
+        @assertEqual(ierr, 0)
+
+        ! Get rid of 'helpful' signal handling
+!        call PetscPushSignalHandler(signalhandler, PETSC_NULL_OBJECT, ierr)
+        @assertEqual(ierr, 0)
     end subroutine
 
     @after
-    subroutine last
-      integer :: ierr
+    subroutine last(this)
+        class(MPITestMethod), intent(inout) :: this
+        integer :: ierr
+        character(:), allocatable :: unused
+        unused = this%getName()
 
-      call PetscFinalize(ierr)
-      @assertEqual(ierr, 0)
+        call PetscFinalize(ierr)
+        @assertEqual(ierr, 0)
     end subroutine
 
+    ! Distributed regular mesh
     @mpiTest( npes=[2] )
-    subroutine dmda_create
+    subroutine dmda_create(this)
+        class(MPITestMethod), intent(inout) :: this
         DM :: mesh
+        Vec :: values, local
         integer :: ierr
+        integer :: comm
+
+        comm = this%getMPICommunicator()
 
         ! Create a 10x10x10 3d mesh
-        call DMDACreate3d(MPI_COMM_WORLD, &
+        call DMDACreate3d(comm, &
                           DMDA_BOUNDARY_NONE, &
                           DMDA_BOUNDARY_NONE, &
                           DMDA_BOUNDARY_NONE, &
@@ -47,8 +74,27 @@ contains
                           PETSC_NULL_INTEGER, &
                           mesh, &
                           ierr)
-
         @assertEqual(ierr,0)
 
+        ! Create values on the mesh
+        call DMCreateGlobalVector(mesh, values, ierr)
+        @assertEqual(ierr,0)
+
+        ! Initialse values
+        call VecSet(values, 0.0, ierr)
+        @assertEqual(ierr,0)
+
+        ! Make a copy of local values
+        call DMCreateLocalVector(mesh, local, ierr)
+        @assertEqual(ierr,0)
+        call DMGlobalToLocalBegin(mesh, values, INSERT_VALUES, local)
+        @assertEqual(ierr,0)
+        call DMGlobalToLocalEnd(mesh, values, INSERT_VALUES, local)
+        @assertEqual(ierr,0)
+
+        ! Cleanup
+        call VecDestroy(values,ierr)
+        call VecDestroy(local,ierr)
+        call DMDestroy(mesh,ierr)
     end subroutine
 end module

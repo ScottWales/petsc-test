@@ -27,6 +27,8 @@ FC         = mpif90
 CC         = mpicc
 LD         = ${CC}
 
+CPPFLAGS  += -Iinclude
+
 # These locations are defaults for vagrant/travis
 PFUNIT    ?= ${HOME}/pfunit
 PETSC_DIR ?= ${HOME}/petsc
@@ -59,6 +61,8 @@ ifeq ($(findstring gcc,$(shell $(FC) -v 2>&1)),gcc)
 else ifeq ($(findstring ifort,$(shell $(FC) -v 2>&1)),ifort)
     COMPILER_TYPE =  intel
 
+CFLAGS += -check-pointers=rw
+LDFLAGS += -check-pointers=rw
     FCFLAGS      += -g -traceback
     FCFLAGS      += -warn all -warn errors -check all
     FCFLAGS      += -Iinclude -module mod
@@ -84,6 +88,8 @@ DEPS += $(patsubst src/%.pf,deps/obj/%.d,$(TESTSRC))
 
 # Compile programs found by the dependency generation
 all: $(FPROGRAMS) bin/plex
+
+bin/benchmark2: obj/readmesh.o
 
 # Run all tests
 check: $(TESTS)

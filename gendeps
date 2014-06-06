@@ -37,7 +37,7 @@ outfile = args.output
 
 # Regexs to find module references in the code
 moduleDef  = re.compile('module\s*(?!procedure\s*)(\S+)',re.IGNORECASE)
-useDef     = re.compile('use\s*(\S+)',re.IGNORECASE)
+useDef     = re.compile('use\s*(?!,\s*intrinsic\s*)(\S+)',re.IGNORECASE)
 programDef = re.compile('program\s*(\S+)',re.IGNORECASE)
 
 # Start with empty lists
@@ -93,7 +93,7 @@ for mod in modules:
 
 # Add to the list of programs
 if isProgram:
-    outfile.write('PROGRAMS += bin/' + basename + '\n')
+    outfile.write('FPROGRAMS += bin/' + basename + '\n')
 
 infile.close()
 outfile.close()

@@ -73,9 +73,16 @@ DM NewMesh(MPI_Comm comm, unsigned overlap) {
 
     DM mesh = NULL;
     if (rank == 0) {
-        DMPlexCreateFromCellList(comm, 2, face_count, vertex_count,
-                                 corners, PETSC_FALSE, faces, dim, vertices,
-                                 &mesh);
+        DMPlexCreateFromCellList(comm,         // MPI Communicator
+                                 2,            // Spatial dimension of graph
+                                 face_count,   // Number of faces
+                                 vertex_count, // Number of vertices
+                                 corners,      // Number of vertices per face
+                                 PETSC_FALSE,  // Create edges
+                                 faces,        // Vertex IDs for each face
+                                 dim,          // Vertex dimension
+                                 vertices,     // Co-ordinates of each vertex
+                                 &mesh);       // Output
     } else {
         DMPlexCreateFromCellList(comm, 2, 0, 0, corners, PETSC_FALSE,
                                  NULL, dim, NULL, &mesh);
@@ -112,12 +119,12 @@ void test(DM mesh) {
     PetscSection section;
     DMPlexCreateSection(mesh,
                         dim,         // Spatial dimension
-                        field_count,
-                        components,
-                        dof,
-                        0,           // number of boundary conditions
-                        NULL,        // bcField
-                        NULL,        // bcPoints
+                        field_count, // Number of fields
+                        components,  // Component count for each field
+                        dof,         // DoF for each field component
+                        0,           // Number of boundary conditions
+                        NULL,        // BC Field
+                        NULL,        // BC Points
                         &section);
     DMSetDefaultSection(mesh, section);
 
